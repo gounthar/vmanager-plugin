@@ -23,10 +23,12 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.StringTokenizer;
+
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.Launcher.ProcStarter;
 import hudson.Proc;
+
 import java.io.FileNotFoundException;
 
 import javax.net.ssl.*;
@@ -150,7 +152,9 @@ public class Utils {
 
             throw e;
         } finally {
-            reader.close();
+            if (reader != null) {
+                reader.close();
+            }
         }
 
         Iterator<String> iter = listOfNames.iterator();
@@ -177,7 +181,9 @@ public class Utils {
             }
             try {
                 File fileToDelete = new File(fileName);
-                fileToDelete.renameTo(new File(fileToDelete + ".delete"));
+                if (!fileToDelete.renameTo(new File(fileToDelete + ".delete"))) {
+                    throw new IOException("Failed to rename file: " + fileName);
+                }
             } catch (Exception e) {
                 if (notInTestMode) {
                     listener.getLogger().print("Failed to delete input file from workspace.  Failed to delete file '" + fileName + "'\n");
@@ -229,7 +235,9 @@ public class Utils {
 
             throw e;
         } finally {
-            reader.close();
+            if (reader != null) {
+                reader.close();
+            }
         }
 
         if (deleteInputFile) {
@@ -238,7 +246,9 @@ public class Utils {
             }
             try {
                 File fileToDelete = new File(fileName);
-                fileToDelete.renameTo(new File(fileToDelete + ".delete"));
+                if (!fileToDelete.renameTo(new File(fileToDelete + ".delete"))) {
+                    throw new IOException("Failed to rename file: " + fileName);
+                }
             } catch (Exception e) {
                 if (notInTestMode) {
                     listener.getLogger().print("Failed to delete input file from workspace.  Failed to delete file '" + fileName + "'\n");
@@ -290,7 +300,9 @@ public class Utils {
 
             throw e;
         } finally {
-            reader.close();
+            if (reader != null) {
+                reader.close();
+            }
         }
 
         Iterator<String> iter = listOfNames.iterator();
@@ -309,7 +321,9 @@ public class Utils {
             }
             try {
                 File fileToDelete = new File(fileName);
-                fileToDelete.delete();
+                if (!fileToDelete.delete()) {
+                    throw new IOException("Failed to delete file: " + fileName);
+                }
             } catch (Exception e) {
                 if (notInTestMode) {
                     listener.getLogger().print("Failed to delete input file from workspace.  Failed to delete file '" + fileName + "'\n");
@@ -365,7 +379,9 @@ public class Utils {
 
             throw e;
         } finally {
-            reader.close();
+            if (reader != null) {
+                reader.close();
+            }
         }
 
         return output;
@@ -447,12 +463,14 @@ public class Utils {
 
             throw e;
         } finally {
-            reader.close();
+            if (reader != null) {
+                reader.close();
+            }
         }
 
         return output;
     }
-    
+
     public String loadJSONDefineInput(String buildID, int buildNumber, String workPlacePath, String envInputFile, TaskListener listener) throws Exception {
         String output = null;
         StringBuffer listOfDefineValues = new StringBuffer();
@@ -503,12 +521,14 @@ public class Utils {
 
             throw e;
         } finally {
-            reader.close();
+            if (reader != null) {
+                reader.close();
+            }
         }
 
         return output;
     }
-    
+
     public String loadJSONAttrValuesFromTextArea(String buildID, int buildNumber, String workPlacePath, TaskListener listener, String textarea) throws Exception {
         String output = null;
         StringBuffer listOfAttrValues = new StringBuffer();
@@ -640,7 +660,9 @@ public class Utils {
 
             throw e;
         } finally {
-            reader.close();
+            if (reader != null) {
+                reader.close();
+            }
         }
 
         output = listOfNames.toString();
@@ -656,7 +678,9 @@ public class Utils {
             }
             try {
                 File fileToDelete = new File(fileName);
-                fileToDelete.renameTo(new File(fileToDelete + ".delete"));
+                if (!fileToDelete.renameTo(new File(fileToDelete + ".delete"))) {
+                    throw new IOException("Failed to rename file: " + fileName);
+                }
             } catch (Exception e) {
                 if (notInTestMode) {
                     listener.getLogger().print("Failed to delete input file from workspace.  Failed to delete file '" + fileName + "'\n");
@@ -691,7 +715,7 @@ public class Utils {
                 throw new Exception("Failed to connect to host " + e.getMessage() + ".  Host is unknown.");
 
             }
-            os.write(input.getBytes());
+            os.write(input.getBytes(StandardCharsets.UTF_8));
             os.flush();
 
             if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
@@ -710,7 +734,7 @@ public class Utils {
                 return errorMessage;
             }
 
-            BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
+            BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream()), StandardCharsets.UTF_8));
 
             StringBuilder result = new StringBuilder();
             String output;
@@ -765,7 +789,7 @@ public class Utils {
                 return errorMessage;
             }
 
-            BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
+            BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream()), StandardCharsets.UTF_8));
 
             StringBuilder result = new StringBuilder();
 
@@ -823,7 +847,7 @@ public class Utils {
     }
 
     public HttpURLConnection getVAPIConnection(String apiUrl, boolean requireAuth, String user, String password, String requestMethod, boolean dynamicUserId, String buildID, int buildNumber, String workPlacePath,
-            TaskListener listener, int connConnTimeOut, int connReadTimeout, boolean advConfig) throws Exception {
+                                               TaskListener listener, int connConnTimeOut, int connReadTimeout, boolean advConfig) throws Exception {
 
         boolean notInTestMode = true;
         if (listener == null) {
@@ -883,15 +907,17 @@ public class Utils {
 
                     throw e;
                 } finally {
-                    reader.close();
+                    if (reader != null) {
+                        reader.close();
+                    }
                 }
             }
 
             String authString = user + ":" + password;
             UserUsedForLogin = user;
             PasswordUsedForLogin = password;
-            byte[] authEncBytes = Base64.encodeBase64(authString.getBytes());
-            String authStringEnc = new String(authEncBytes);
+            byte[] authEncBytes = Base64.encodeBase64(authString.getBytes(StandardCharsets.UTF_8));
+            String authStringEnc = new String(authEncBytes, StandardCharsets.UTF_8);
             conn.setRequestProperty("Authorization", "Basic " + authStringEnc);
             // ----------------------------------------------------------------------------------------
         }
@@ -900,7 +926,7 @@ public class Utils {
     }
 
     public String executeVSIFLaunch(String[] vsifs, String url, boolean requireAuth, String user, String password, TaskListener listener, boolean dynamicUserId, String buildID, int buildNumber,
-            String workPlacePath, int connConnTimeOut, int connReadTimeout, boolean advConfig, String jsonEnvInput, boolean useUserOnFarm, String userFarmType, String[] farmUserPassword, StepHolder stepHolder, String envSourceInputFile, String workingJobDir, VMGRBuildArchiver vMGRBuildArchiver, boolean userPrivateSSHKey, String jsonAttrValuesInput, String executionType, String[] sessionNames, String envSourceInputFileType, Launcher launcher, String jsonDefineInput) throws Exception {
+                                    String workPlacePath, int connConnTimeOut, int connReadTimeout, boolean advConfig, String jsonEnvInput, boolean useUserOnFarm, String userFarmType, String[] farmUserPassword, StepHolder stepHolder, String envSourceInputFile, String workingJobDir, VMGRBuildArchiver vMGRBuildArchiver, boolean userPrivateSSHKey, String jsonAttrValuesInput, String executionType, String[] sessionNames, String envSourceInputFileType, Launcher launcher, String jsonDefineInput) throws Exception {
 
         boolean notInTestMode = true;
         if (listener == null) {
@@ -908,7 +934,6 @@ public class Utils {
         }
 
         String apiURL = url + "/rest/sessions/launch";
-        String apiSessionURL = url + "/rest/sessions/list";
 
         List<String> listOfSessions = new ArrayList<String>();
 
@@ -967,12 +992,16 @@ public class Utils {
 
                                 throw e;
                             } finally {
-                                reader.close();
+                                if (reader != null) {
+                                    reader.close();
+                                }
                             }
                         }
                     } else if (!userPrivateSSHKey) {
-                        userFarm = farmUserPassword[0];;
-                        passwordFarm = farmUserPassword[1];;
+                        userFarm = farmUserPassword[0];
+                        ;
+                        passwordFarm = farmUserPassword[1];
+                        ;
                     }
 
                     if (!userPrivateSSHKey) {
@@ -992,7 +1021,7 @@ public class Utils {
                 //listener.getLogger().print("Verisium Manager vAPI input: '" + input + "' with user/password: "+ user + "/" + password +"\n");
                 HttpURLConnection conn = getVAPIConnection(apiURL, requireAuth, user, password, "POST", dynamicUserId, buildID, buildNumber, workPlacePath, listener, connConnTimeOut, connReadTimeout, advConfig);
                 OutputStream os = conn.getOutputStream();
-                os.write(input.getBytes());
+                os.write(input.getBytes(StandardCharsets.UTF_8));
                 os.flush();
 
                 if (conn.getResponseCode() != HttpURLConnection.HTTP_OK && conn.getResponseCode() != HttpURLConnection.HTTP_NO_CONTENT && conn.getResponseCode() != HttpURLConnection.HTTP_ACCEPTED && conn.getResponseCode() != HttpURLConnection.HTTP_CREATED && conn.getResponseCode() != HttpURLConnection.HTTP_PARTIAL && conn.getResponseCode() != HttpURLConnection.HTTP_RESET) {
@@ -1015,7 +1044,7 @@ public class Utils {
                     return errorMessage;
                 }
 
-                BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
+                BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream()), StandardCharsets.UTF_8));
 
                 StringBuilder result = new StringBuilder();
                 String output;
@@ -1072,7 +1101,7 @@ public class Utils {
     }
 
     public String executeAPI(String jSON, String apiUrl, String url, boolean requireAuth, String user, String password, String requestMethod, TaskListener listener, boolean dynamicUserId, String buildID, int buildNumber,
-            String workPlacePath, int connConnTimeOut, int connReadTimeout, boolean advConfig) throws Exception {
+                             String workPlacePath, int connConnTimeOut, int connReadTimeout, boolean advConfig) throws Exception {
 
         try {
 
@@ -1091,7 +1120,7 @@ public class Utils {
 
             if ("PUT".equals(requestMethod) || "POST".equals(requestMethod)) {
                 OutputStream os = conn.getOutputStream();
-                os.write(input.getBytes());
+                os.write(input.getBytes(StandardCharsets.UTF_8));
                 os.flush();
             }
 
@@ -1123,7 +1152,7 @@ public class Utils {
                 return errorMessage;
             }
 
-            BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
+            BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream()), StandardCharsets.UTF_8));
 
             StringBuilder result = new StringBuilder();
             String output;
@@ -1159,7 +1188,7 @@ public class Utils {
     }
 
     public void waitTillSessionEnds(String url, boolean requireAuth, String user, String password, TaskListener listener, boolean dynamicUserId, String buildID, int buildNumber,
-            String workPlacePath, int connConnTimeOut, int connReadTimeout, boolean advConfig, StepHolder stepHolder, List listOfSessions, boolean notInTestMode, String workingJobDir, Launcher launcher) throws Exception {
+                                    String workPlacePath, int connConnTimeOut, int connReadTimeout, boolean advConfig, StepHolder stepHolder, List listOfSessions, boolean notInTestMode, String workingJobDir, Launcher launcher) throws Exception {
 
         LaunchHolder launchHolder = new LaunchHolder(stepHolder, listOfSessions, this);
         launchHolder.performWaiting(url, requireAuth, user, password, listener, dynamicUserId, buildID, buildNumber,
@@ -1205,10 +1234,11 @@ public class Utils {
         String errorMessage = "";
         StringBuilder resultFromError = null;
         int responseCode = 0;
+        BufferedReader br = null;
         try {
             resultFromError = new StringBuilder(conn.getResponseMessage());
             responseCode = conn.getResponseCode();
-            BufferedReader br = new BufferedReader(new InputStreamReader((conn.getErrorStream())));
+            br = new BufferedReader(new InputStreamReader((conn.getErrorStream()), StandardCharsets.UTF_8));
 
             String output;
             while ((output = br.readLine()) != null) {
@@ -1217,6 +1247,13 @@ public class Utils {
         } catch (Exception e) {
 
         } finally {
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
             errorMessage = "Failed : HTTP error code : " + responseCode + " (" + resultFromError + ")\n";
             if (notInTestMode) {
                 listener.getLogger().print(errorMessage);
@@ -1261,20 +1298,32 @@ public class Utils {
     }
 
     public void standardWriteToDisk(String fileOnDiskPath, String output) throws IOException {
-        FileWriter writer = new FileWriter(fileOnDiskPath);
-        writer.append(output);
-        writer.flush();
-        writer.close();
+        try (FileWriter writer = new FileWriter(fileOnDiskPath, StandardCharsets.UTF_8)) {
+            writer.append(output);
+            writer.flush();
+        }
     }
 
     public BufferedReader standardReadFromDisk(String fileOnDiskPath) throws FileNotFoundException {
-        return new BufferedReader(new FileReader(fileOnDiskPath));
+        try {
+            if (filePath != null) {
+                hudson.FilePath newFile = filePath.child(fileOnDiskPath);
+                return new BufferedReader(new InputStreamReader(newFile.read(), StandardCharsets.UTF_8));
+            } else {
+                return new BufferedReader(new FileReader(fileOnDiskPath, StandardCharsets.UTF_8));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new FileNotFoundException("File not found: " + fileOnDiskPath);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e.getMessage());
+        }
     }
 
     public void moveFromNodeToMaster(String fileName, Launcher launcher, String content) throws IOException, InterruptedException {
 
         //Get master FilePath
-        String buildDir = build.getRootDir().getAbsolutePath();
         FilePath masterDirectory = new FilePath(build.getRootDir()).child(fileName);
         //this.jobListener.getLogger().print("About to copy " + fileName + " from Slave location to Master location: \n");
         //this.jobListener.getLogger().print("From Slave location: " + this.filePath.getRemote() + "\n");
@@ -1293,44 +1342,39 @@ public class Utils {
         jobListener.getLogger().print("Select vsif for this execution is " + executionVsifFile + "\n");
         boolean foundGoodVSIF = false;
 
+        Proc proc = null;
+        BufferedReader in = null;
+        BufferedReader inError = null;
+
         try {
             Launcher.ProcStarter ps = launcher.new ProcStarter();
-        
-            ps.cmds(command);//.readStdout();
-
+            ps.cmds(command);
             ps.readStdout();
             ps.readStderr();
-            Proc proc = launcher.launch(ps);
-            
-            
-            BufferedReader in = new BufferedReader(new InputStreamReader(proc.getStdout()));
-            BufferedReader inError = new BufferedReader(new InputStreamReader(proc.getStdout()));
-            String s = null;
+            proc = launcher.launch(ps);
+
+            in = new BufferedReader(new InputStreamReader(proc.getStdout(), StandardCharsets.UTF_8));
+            inError = new BufferedReader(new InputStreamReader(proc.getStderr(), StandardCharsets.UTF_8));
+            String s;
 
             while ((s = in.readLine()) != null) {
-
                 jobListener.getLogger().print(s + "\n");
                 if (s.indexOf("*I,runner.sessionStarted: Session") > -1) {
                     foundGoodVSIF = true;
                     sessionNameToMonitor = s.substring(34, s.indexOf(" started."));
 
-                    //Now creates the file of sessions.input
+                    // Now creates the file of sessions.input
                     String fileOutput = buildNumber + "." + buildId + ".sessions.input";
                     StringBuffer writer = new StringBuffer();
                     writer.append(sessionNameToMonitor);
                     hudson.FilePath newFile = filePath.child(fileOutput);
                     newFile.write(writer.toString(), StandardCharsets.UTF_8.name());
-
                 }
-
             }
 
-            String sError = null;
-
+            String sError;
             while ((sError = inError.readLine()) != null) {
-
                 jobListener.getLogger().print(sError + "\n");
-
             }
 
         } catch (IOException e) {
@@ -1338,21 +1382,34 @@ public class Utils {
             for (StackTraceElement ste : e.getStackTrace()) {
                 jobListener.getLogger().println(" " + ste);
             }
-
             jobListener.getLogger().println(ExceptionUtils.getFullStackTrace(e));
         } catch (InterruptedException ex) {
             jobListener.getLogger().println(ex.getMessage());
             for (StackTraceElement ste : ex.getStackTrace()) {
                 jobListener.getLogger().println(" " + ste);
             }
-
             jobListener.getLogger().println(ExceptionUtils.getFullStackTrace(ex));
+        } finally {
+            if (in != null) {
+                try {
+                    in.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (inError != null) {
+                try {
+                    inError.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
 
         if (foundGoodVSIF) {
             jobListener.getLogger().print("Found session name to monitor: " + sessionNameToMonitor + "\n");
         } else {
-            throw new IOException("Failed to launch vsif using batch.  Job stopped.");
+            throw new IOException("Failed to launch vsif using batch. Job stopped.");
         }
     }
 
